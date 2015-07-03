@@ -9,13 +9,13 @@ You will need to compile the example first:
 To run the example on Jboss Fuse 6.1.0
 
 1) launch the server
-
+```xml
 fuse.bat
-
+```
 2) Add below required features
 
 create feature file like "eim-references.xml"
-
+```xml
 <features>
 	<feature name='eim-references' version='1.0'>
 		<bundle>mvn:com.fasterxml.jackson.core/jackson-core/2.5.0</bundle>
@@ -31,20 +31,22 @@ create feature file like "eim-references.xml"
 
 JBossFuse:karaf@root>features:addUrl file:<Project-folder>/eim-references.xml
 JBossFuse:karaf@root>features:install eim-references
-
+```
 3) Deploy the project
-
+```xml
 osgi:install -s mvn:com.altisource.eim/eim-data-services/1.0.0
-  
+```
 4) Open http://localhost:8181/ - credentials ----> username-->admin, password-->admin
-  
+```xml
 http://localhost:8181/cxf/camel-example-cxf-osgi/webservices/incident?wsdl
-                                
+```
 5) Click ActiveMQ tab and select DATAQ and post a sample xml or json message. 
-After posting message, check the following location d:\test\RStoEQImport2015.07.184-12.07.421.txt
-
+After posting message, check the following location 
+```xml
+d:\test\RStoEQImport2015.07.184-12.07.421.txt
+```
 Sample Message:
-
+```xml
 <xml version="1.0" encoding="UTF-8"?>
 <famliyDetails>
      <incidentId>111</incidentId>
@@ -53,7 +55,8 @@ Sample Message:
      <email>cmueller@apache.org</email>
      <phone>0049 69 1234567</phone>
 </famliyDetails>
- 
+```
 Converted String:
+```xml
 111|2011-03-05|Christian|cmueller@apache.org|0049 69 1234567|
-
+```
