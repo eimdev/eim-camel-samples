@@ -47,7 +47,7 @@ d:\test\RStoEQImport2015.07.184-12.07.421.txt
 ```
 Sample Message:
 ```xml
-<xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <famliyDetails>
      <incidentId>111</incidentId>
      <incidentDate>2011-03-05</incidentDate>
