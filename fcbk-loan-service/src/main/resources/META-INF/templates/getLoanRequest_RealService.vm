@@ -1,0 +1,9 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://service.eim.altisource.com/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <ser:getLoanDetails>
+         <!--Optional:-->
+         <loanId>${body}</loanId>
+      </ser:getLoanDetails>
+   </soapenv:Body>
+</soapenv:Envelope>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+	license agreements. See the NOTICE file distributed with this work for additional 
+	information regarding copyright ownership. The ASF licenses this file to 
+	You under the Apache License, Version 2.0 (the "License"); you may not use 
+	this file except in compliance with the License. You may obtain a copy of 
+	the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+	by applicable law or agreed to in writing, software distributed under the 
+	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+	OF ANY KIND, either express or implied. See the License for the specific 
+	language governing permissions and limitations under the License. -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/spring"
+	xmlns:cxf="http://camel.apache.org/schema/cxf"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+           http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd">
+
+	<import resource="classpath:META-INF/spring/fcbk-bean.xml" />
+	<camelContext trace="true" id="FCBKServiceRoute"
+		xmlns="http://camel.apache.org/schema/spring">
+		<properties>
+			<property key="CamelLogDebugBodyMaxChars" value="50000000" />
+		</properties>
+
+		<dataFormats>
+			<xmljson id="xmljsonWithOptions" forceTopLevelObject="true"
+				trimSpaces="true" skipNamespaces="true" removeNamespacePrefixes="true" />
+		</dataFormats>
+
+		<route id="FCBKLoanServiceProcessorRoute">
+			<from
+				uri="cxfrs:/rest/fcbkLoanService?resourceClasses=com.altisource.fcbk.service.FCBKLoanService&amp;bindingStyle=SimpleConsumer&amp;providers=#restJacksonProviderList"
+				id="FCBKRESTConsumer">
+				<description>Rest service to consume Real data</description>
+			</from>
+			<log message="Request Received &gt;&gt; ${body}" />
+			<choice id="IdentifyOperation">
+				<when>
+					<simple>${in.header.operationName} == "getLoanDetails"</simple>
+					<to uri="bean:fcbkLoanServiceProcessor?method=getLoanId" id="GetLoanIdFromRequest1" />
+					<to uri="direct:fcbkConstructResponse" />
+					<to uri="bean:fcbkLoanServiceProcessor?method=constructLoanResponse"
+						id="ConstructLoanResponse" />
+				</when>
+				<when>
+					<simple>${in.header.operationName} == "getFullLoanDetails"</simple>
+					<to uri="bean:fcbkLoanServiceProcessor?method=getLoanId" id="GetLoanIdFromRequest2" />
+					<to uri="direct:fcbkConstructResponse" />
+					<to uri="bean:fcbkLoanServiceProcessor?method=extractLoanResponse"
+						id="ExtractLoanResponse" />
+					<marshal ref="xmljsonWithOptions" />
+				</when>
+			</choice>
+		</route>
+		<route autoStartup="true" id="FCBKFileProcessingForGetLoanDetailsRoute">
+			<from
+				uri="file:D:/data?fileName=fcbk_loanIds_inputFile.txt&amp;delete=true"
+				id="GetLoanDetails">
+				<description />
+			</from>
+			<log
+				message="***************************Reading Loan Ids File Processing is Started******************************${body}" />
+			<to uri="bean:fcbkLoanServiceProcessor?method=getLoanIds" id="ReadLoanIdsFromFileToGetLoanDetails" />
+			<split>
+				<tokenize token=","></tokenize>
+				<to uri="direct:fcbkConstructResponse" />
+				<to uri="bean:fcbkLoanServiceProcessor?method=writeLoanResponse"
+					id="WriteLoanResponse" />
+				<to
+					uri="file:D:/data/out?fileName=fcbk_OutputFile.txt&amp;fileExist=Append"
+					id="WriteLoanDetailsOutputFile" />
+			</split>
+		</route>
+		<route id="FCBKConstructLoanResponseRoute">
+			<from uri="direct:fcbkConstructResponse" />
+			<log message="Tranforming Rest input to real     service Loan request" />
+			<to
+				uri="velocity:META-INF/templates/getLoanRequest_RealService.vm?contentCache=false"
+				id="RealServiceRequestTransformation" />
+			<log message="Calling Realservice     Loan request" />
+			<to uri="http4://localhost:8181/cxf/EIMLoanDataService" />
+			<log message="Convert real service response to pipe delimited string" />
+			<to uri="bean:fcbkLoanServiceProcessor?method=decodeXMLResponse"
+				id="DecodeXMLResponse" />
+		</route>
+	</camelContext>
+</beans>
